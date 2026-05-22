@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Turborepo
+.turbo/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Prisma
+apps/api/prisma/migrations/
+
+# PWA
+apps/web/public/sw.js
+apps/web/public/workbox-*.js
+apps/web/public/manifest.webmanifest
+
+# md docs
+SWIFTPOS_PROJECT.md

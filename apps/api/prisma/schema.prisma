@@ -1,0 +1,255 @@
+// Multi-tenant SwiftPOS schema.
+// Every model except Tenant carries tenantId and is always queried with
+// `where: { tenantId: req.tenantId }` — enforced in the repository layer.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Tenant & Users
+// ---------------------------------------------------------------------------
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  theme     Json     // PosTheme — primaryColor, logo, receiptHeader, currencyCode, taxRate
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users              User[]
+  categories         Category[]
+  products           Product[]
+  orders             Order[]
+  customers          Customer[]
+  loyaltyTransactions LoyaltyTransaction[]
+  inventoryItems     InventoryItem[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  tenantId  String
+  email     String
+  name      String
+  password  String   // bcrypt hash
+  role      UserRole @default(cashier)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  refreshTokens RefreshToken[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+}
+
+enum UserRole {
+  admin
+  cashier
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Catalog
+// ---------------------------------------------------------------------------
+
+model Category {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  products Product[]
+
+  @@index([tenantId])
+}
+
+model Product {
+  id                String   @id @default(uuid())
+  tenantId          String
+  categoryId        String?
+  name              String
+  description       String?
+  sku               String?
+  price             Decimal  @db.Decimal(10, 2)
+  variants          Json     @default("[]") // PriceVariant[]
+  imageUrl          String?
+  isAvailable       Boolean  @default(true)
+  trackInventory    Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  category      Category?      @relation(fields: [categoryId], references: [id])
+  orderItems    OrderItem[]
+  inventoryItem InventoryItem?
+
+  @@index([tenantId])
+  @@index([tenantId, categoryId])
+  @@index([tenantId, isAvailable])
+}
+
+// ---------------------------------------------------------------------------
+// Orders
+// ---------------------------------------------------------------------------
+
+model Order {
+  id            String        @id @default(uuid())
+  tenantId      String
+  orderNumber   Int
+  subtotal      Decimal       @db.Decimal(10, 2)
+  tax           Decimal       @db.Decimal(10, 2)
+  discount      Decimal       @db.Decimal(10, 2) @default(0)
+  total         Decimal       @db.Decimal(10, 2)
+  paymentMethod PaymentMethod
+  customerId    String?
+  status        OrderStatus   @default(pending)
+  source        OrderSource   @default(pos)
+  createdAt     DateTime      @default(now())
+  syncedAt      DateTime?     // null = received from offline queue but not yet confirmed
+
+  tenant              Tenant               @relation(fields: [tenantId], references: [id])
+  customer            Customer?            @relation(fields: [customerId], references: [id])
+  items               OrderItem[]
+  loyaltyTransactions LoyaltyTransaction[]
+
+  @@unique([tenantId, orderNumber])
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, customerId])
+}
+
+enum PaymentMethod {
+  cash
+  card
+  qr
+}
+
+enum OrderStatus {
+  pending
+  paid
+  voided
+}
+
+enum OrderSource {
+  pos
+  rms
+}
+
+model OrderItem {
+  id          String  @id @default(uuid())
+  orderId     String
+  productId   String
+  productName String  // snapshot — product name at time of sale
+  variantId   String?
+  variantName String?
+  quantity    Int
+  unitPrice   Decimal @db.Decimal(10, 2)
+  totalPrice  Decimal @db.Decimal(10, 2)
+  note        String?
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+// ---------------------------------------------------------------------------
+// Customers & Loyalty
+// ---------------------------------------------------------------------------
+
+model Customer {
+  id            String      @id @default(uuid())
+  tenantId      String
+  name          String
+  email         String?
+  phone         String?
+  loyaltyPoints Int         @default(0)
+  loyaltyTier   LoyaltyTier @default(bronze)
+  totalSpend    Decimal     @db.Decimal(10, 2) @default(0)
+  visitCount    Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  tenant              Tenant               @relation(fields: [tenantId], references: [id])
+  orders              Order[]
+  loyaltyTransactions LoyaltyTransaction[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([tenantId, loyaltyTier])
+}
+
+enum LoyaltyTier {
+  bronze
+  silver
+  gold
+}
+
+model LoyaltyTransaction {
+  id           String                 @id @default(uuid())
+  tenantId     String
+  customerId   String
+  orderId      String?
+  type         LoyaltyTransactionType
+  points       Int
+  balanceAfter Int
+  note         String?
+  createdAt    DateTime               @default(now())
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  order    Order?   @relation(fields: [orderId], references: [id])
+
+  @@index([tenantId, customerId])
+  @@index([tenantId, createdAt])
+}
+
+enum LoyaltyTransactionType {
+  earn
+  redeem
+  adjustment
+}
+
+// ---------------------------------------------------------------------------
+// Inventory
+// ---------------------------------------------------------------------------
+
+model InventoryItem {
+  id                String   @id @default(uuid())
+  tenantId          String
+  productId         String   @unique // 1-to-1 with Product
+  stockQuantity     Int      @default(0)
+  lowStockThreshold Int      @default(10)
+  updatedAt         DateTime @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, stockQuantity])
+}

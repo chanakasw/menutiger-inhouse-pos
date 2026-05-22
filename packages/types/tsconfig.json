@@ -1,0 +1,11 @@
+{
+  "extends": "@swiftpos/config/tsconfig",
+  "compilerOptions": {
+    "lib": ["esnext"],
+    "module": "esnext",
+    "target": "es2020",
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src"]
+}
