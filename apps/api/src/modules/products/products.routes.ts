@@ -6,8 +6,11 @@ const router: ExpressRouter = Router();
 
 router.use(requireAuth, requireTenant);
 
-// Specific routes before parameterised :id
+// Category routes — must come before /:id
 router.get('/categories', productsController.listCategories);
+router.post('/categories', requireRole('admin'), productsController.createCategory);
+router.patch('/categories/:id', requireRole('admin'), productsController.updateCategory);
+router.delete('/categories/:id', requireRole('admin'), productsController.deleteCategory);
 
 router.get('/', productsController.listProducts);
 router.get('/:id', productsController.getProduct);

@@ -19,6 +19,30 @@ export async function listCategories(req: Request, res: Response, next: NextFunc
   } catch (err) { next(err); }
 }
 
+/** POST /api/products/categories */
+export async function createCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const category = await productsService.createCategory(req.tenantId, req.body);
+    res.status(201).json(category);
+  } catch (err) { next(err); }
+}
+
+/** PATCH /api/products/categories/:id */
+export async function updateCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const category = await productsService.updateCategory(req.tenantId, req.params['id'] as string, req.body);
+    res.json(category);
+  } catch (err) { next(err); }
+}
+
+/** DELETE /api/products/categories/:id */
+export async function deleteCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    await productsService.deleteCategory(req.tenantId, req.params['id'] as string);
+    res.status(204).send();
+  } catch (err) { next(err); }
+}
+
 /** GET /api/products/:id */
 export async function getProduct(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {

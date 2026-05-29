@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { CreateProductSchema, UpdateProductSchema } from '@swiftpos/types';
 import { NotFoundError } from '../../lib/errors.js';
 import * as productsRepository from './products.repository.js';
@@ -42,7 +43,11 @@ export async function updateProduct(tenantId: string, id: string, body: unknown)
     ...(data.variants !== undefined && { variants: data.variants as object[] }),
     ...(data.isAvailable !== undefined && { isAvailable: data.isAvailable }),
     ...(data.trackInventory !== undefined && { trackInventory: data.trackInventory }),
-    ...(data.categoryId !== undefined && { category: { connect: { id: data.categoryId } } }),
+    ...(data.categoryId !== undefined
+      ? data.categoryId
+        ? { category: { connect: { id: data.categoryId } } }
+        : { category: { disconnect: true } }
+      : {}),
   });
   return getProduct(tenantId, id);
 }
@@ -56,4 +61,26 @@ export async function deleteProduct(tenantId: string, id: string) {
 /** Lists all categories for the tenant. */
 export async function listCategories(tenantId: string) {
   return productsRepository.findAllCategories(tenantId);
+}
+
+/** Creates a new category. */
+export async function createCategory(tenantId: string, body: unknown) {
+  const data = z.object({ name: z.string().min(1).max(100), sortOrder: z.number().int().nonnegative().optional() }).parse(body);
+  return productsRepository.createCategory(tenantId, data.name, data.sortOrder ?? 0);
+}
+
+/** Updates a category. */
+export async function updateCategory(tenantId: string, id: string, body: unknown) {
+  const category = await productsRepository.findCategoryById(tenantId, id);
+  if (!category) throw new NotFoundError('Category not found');
+  const data = z.object({ name: z.string().min(1).max(100).optional(), sortOrder: z.number().int().nonnegative().optional() }).parse(body);
+  await productsRepository.updateCategory(tenantId, id, data);
+  return productsRepository.findCategoryById(tenantId, id);
+}
+
+/** Deletes a category (products in it become uncategorised). */
+export async function deleteCategory(tenantId: string, id: string) {
+  const category = await productsRepository.findCategoryById(tenantId, id);
+  if (!category) throw new NotFoundError('Category not found');
+  await productsRepository.removeCategory(tenantId, id);
 }

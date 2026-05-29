@@ -7,19 +7,25 @@ import { useTenant } from '@/hooks';
 
 /** Reads products and categories from Dexie (instant, offline-capable).
  *  Fetches from API in the background when online, then upserts into Dexie. */
-export function useProducts(selectedCategoryId?: string) {
+export function useProducts(selectedCategoryId?: string, search?: string) {
   const { tenantId } = useTenant();
+  const searchLower = search?.trim().toLowerCase();
 
   // Always read from Dexie — updates live as Dexie changes
   const products = useLiveQuery<Product[]>(
     () => {
       if (!tenantId) return Promise.resolve([]);
       const query = db.products.where('tenantId').equals(tenantId);
-      return selectedCategoryId
-        ? query.filter((p) => p.categoryId === selectedCategoryId && p.isAvailable).toArray()
-        : query.filter((p) => p.isAvailable).toArray();
+      return query
+        .filter((p) => {
+          if (!p.isAvailable) return false;
+          if (selectedCategoryId && p.categoryId !== selectedCategoryId) return false;
+          if (searchLower && !p.name.toLowerCase().includes(searchLower)) return false;
+          return true;
+        })
+        .toArray();
     },
-    [tenantId, selectedCategoryId]
+    [tenantId, selectedCategoryId, searchLower]
   );
 
   const categories = useLiveQuery<Category[]>(

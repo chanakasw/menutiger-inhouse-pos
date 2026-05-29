@@ -31,7 +31,7 @@ export type PriceVariant = z.infer<typeof PriceVariantSchema>;
 export const ProductSchema = z.object({
   id: z.string().uuid(),
   tenantId: z.string().uuid(),
-  categoryId: z.string().uuid().optional(),
+  categoryId: z.string().min(1).optional(),
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
   sku: z.string().max(100).optional(),
@@ -57,6 +57,8 @@ export const CreateProductSchema = ProductSchema.omit({
 /** Payload for creating a new product. */
 export type CreateProduct = z.infer<typeof CreateProductSchema>;
 
-export const UpdateProductSchema = CreateProductSchema.partial();
+export const UpdateProductSchema = CreateProductSchema.partial().extend({
+  categoryId: z.string().min(1).nullable().optional(),
+});
 /** Payload for partially updating a product. */
 export type UpdateProduct = z.infer<typeof UpdateProductSchema>;

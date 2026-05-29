@@ -7,6 +7,7 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { LoyaltyPage } from '@/features/loyalty/LoyaltyPage';
 import { InventoryPage } from '@/features/inventory/InventoryPage';
 import { OrdersPage } from '@/features/orders/OrdersPage';
+import { ProductsPage } from '@/features/products/ProductsPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 
 export const router: ReturnType<typeof createBrowserRouter> = createBrowserRouter([
@@ -26,6 +27,7 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
       { path: 'checkout', element: <CheckoutPage /> },
       { path: 'dashboard', element: <DashboardPage /> },
       { path: 'orders', element: <OrdersPage /> },
+      { path: 'products', element: <ProductsPage /> },
       { path: 'loyalty', element: <LoyaltyPage /> },
       { path: 'inventory', element: <InventoryPage /> },
       { path: 'settings', element: <SettingsPage /> },

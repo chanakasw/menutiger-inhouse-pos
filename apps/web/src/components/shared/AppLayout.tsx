@@ -3,6 +3,7 @@ import {
   ShoppingCart,
   LayoutDashboard,
   ClipboardList,
+  UtensilsCrossed,
   Heart,
   Package,
   Settings,
@@ -16,12 +17,13 @@ import { useSessionStore } from '@/store';
 import { api } from '@/lib/api-client';
 
 const NAV_ITEMS = [
-  { to: '/checkout', label: 'Checkout', icon: ShoppingCart },
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/orders', label: 'Orders', icon: ClipboardList },
-  { to: '/loyalty', label: 'Loyalty', icon: Heart },
-  { to: '/inventory', label: 'Inventory', icon: Package },
-  { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/checkout', label: 'Checkout', icon: ShoppingCart, adminOnly: false },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
+  { to: '/orders', label: 'Orders', icon: ClipboardList, adminOnly: false },
+  { to: '/products', label: 'Products', icon: UtensilsCrossed, adminOnly: true },
+  { to: '/loyalty', label: 'Loyalty', icon: Heart, adminOnly: false },
+  { to: '/inventory', label: 'Inventory', icon: Package, adminOnly: false },
+  { to: '/settings', label: 'Settings', icon: Settings, adminOnly: false },
 ] as const;
 
 export function AppLayout() {
@@ -49,7 +51,7 @@ export function AppLayout() {
 
         {/* Navigation */}
         <nav className="flex flex-1 flex-col gap-1 p-2">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+          {NAV_ITEMS.filter(({ adminOnly }) => !adminOnly || user?.role === 'admin').map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const ProductFiltersSchema = z.object({
-  categoryId: z.string().uuid().optional(),
+  categoryId: z.string().min(1).optional(),
   isAvailable: z
     .string()
     .optional()
