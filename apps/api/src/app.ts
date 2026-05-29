@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
 import { authRouter } from './modules/auth/index.js';
+import { ordersRouter } from './modules/orders/index.js';
 import { productsRouter } from './modules/products/index.js';
 import { syncRouter } from './modules/sync/index.js';
 import { errorMiddleware } from './middleware/index.js';
@@ -30,6 +31,7 @@ app.get('/health', (_req, res) => {
 
 // API routes
 app.use('/api/auth', authRouter);
+app.use('/api/orders', ordersRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/sync', syncRouter);
 

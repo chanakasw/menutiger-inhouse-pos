@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import {
   ShoppingCart,
   LayoutDashboard,
+  ClipboardList,
   Heart,
   Package,
   Settings,
@@ -17,6 +18,7 @@ import { api } from '@/lib/api-client';
 const NAV_ITEMS = [
   { to: '/checkout', label: 'Checkout', icon: ShoppingCart },
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/orders', label: 'Orders', icon: ClipboardList },
   { to: '/loyalty', label: 'Loyalty', icon: Heart },
   { to: '/inventory', label: 'Inventory', icon: Package },
   { to: '/settings', label: 'Settings', icon: Settings },

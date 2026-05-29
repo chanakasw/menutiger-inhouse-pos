@@ -1,6 +1,7 @@
 import { SyncPayloadSchema } from '@swiftpos/types';
 import { db } from './schema';
 import { uuid } from '../lib/utils';
+import { queryClient } from '../lib/query-client';
 import { useSessionStore } from '../store';
 import { useConnectivityStore } from '../store';
 
@@ -70,6 +71,11 @@ export async function flushSyncQueue(): Promise<void> {
       .where('id')
       .anyOf(accepted)
       .modify({ _syncStatus: 'synced', syncedAt: new Date() });
+
+    // Invalidate orders queries so Dashboard and Orders page refresh automatically
+    if (accepted.length > 0) {
+      void queryClient.invalidateQueries({ queryKey: ['orders'] });
+    }
   } catch (err) {
     // Increment retry count on all items in the batch on network failure
     const localIds = pending.map((t) => t.localId);
